@@ -15,24 +15,37 @@ import javax.swing.JTextField;
 public class SearchComboBox<K, V> extends JComboBox<ComboItem<K, V>> {
 	
 	private final DefaultComboBoxModel<ComboItem<K,V>> originalModel;
+	
+	private boolean allowFreeText = false;
 
 	public SearchComboBox() {
 		originalModel = new DefaultComboBoxModel<>();
 		super.setModel(originalModel);
-		
-		textField().addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyReleased(KeyEvent e) {
-				String text = textField().getText();
-				List<ComboItem<K, V>> results = search(text);
-				System.out.println(results);
-				showSearchResults(text, results);
-			}
-		});
+		textField().addKeyListener(new TextFieldKeyListener());
 	}
 
-	private List<ComboItem<K, V>> search(String text) {
-		System.out.println("search = " + text);
+	private class TextFieldKeyListener extends KeyAdapter {
+		@Override
+		public void keyReleased(KeyEvent e) {
+			int keyCode = e.getKeyCode();
+			
+			// Ignora teclas que não geram caracteres, para não afetar a lista de resultados.
+			if (e.isActionKey() || e.isAltDown() || e.isAltGraphDown() || e.isControlDown() || e.isMetaDown() || e.isShiftDown()) {
+				return;
+			} else if (KeyEvent.VK_DELETE == keyCode || KeyEvent.VK_ESCAPE == keyCode || KeyEvent.VK_ENTER == keyCode) {
+				return;
+			}
+			
+			String text = textField().getText();
+			
+			List<ComboItem<K, V>> results = search(text);
+			
+			showSearchResults(text, results);
+		}
+	}
+
+	protected List<ComboItem<K, V>> search(String text) {
+		//System.out.println("search = " + text);
 		if (text == null || text.trim().isEmpty()) {
 			return Collections.emptyList();
 		}
@@ -52,17 +65,25 @@ public class SearchComboBox<K, V> extends JComboBox<ComboItem<K, V>> {
 	
 	protected void showSearchResults(String text, List<ComboItem<K, V>> results) {
 		if (!results.isEmpty()) {
-			// Mostra itens conforme o texto digitado
+			// Itens filtrados conforme o texto digitado.
 			DefaultComboBoxModel<ComboItem<K,V>> newModel = new DefaultComboBoxModel<>(new Vector<>(results));
 			setModel(newModel);
 			
 		} else {
-			// Mostra todos os itens
+			// Itens originais, ou seja, todos os itens da lista.
 			setModel(originalModel);
 		}
 
 		textField().setText(text);
 		showPopup();
+	}
+	
+	public boolean allowFreeText() {
+		return allowFreeText;
+	}
+
+	public void setAllowFreeText(boolean allowFreeText) {
+		this.allowFreeText = allowFreeText;
 	}
 
 	public JTextField textField() {
@@ -80,11 +101,13 @@ public class SearchComboBox<K, V> extends JComboBox<ComboItem<K, V>> {
 		combo.addItem(ComboItem.build(2, "Brasil"));
 		combo.addItem(ComboItem.build(3, "Canadá"));
 		combo.addItem(ComboItem.build(4, "Dinamarca"));
+		combo.addItem(ComboItem.build(5, "Reino Unido"));
+		combo.addItem(ComboItem.build(6, "Países Baixos"));
 		combo.setEditable(true);
 		
 		JOptionPane.showMessageDialog(null, combo);
 		
-		System.out.println(String.format("Item selecionado: %s [%s]", combo.getSelectedItem().getClass().getSimpleName(), combo.getSelectedItem()));
+		System.out.println(String.format("Item selecionado: %s[%s]", combo.getSelectedItem().getClass().getSimpleName(), combo.getSelectedItem()));
 		System.out.println("Texto: " + combo.getTextField().getText());
 	}
 
