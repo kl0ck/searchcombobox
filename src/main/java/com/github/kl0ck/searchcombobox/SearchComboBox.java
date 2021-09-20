@@ -9,19 +9,25 @@ import java.util.Vector;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.plaf.basic.BasicComboPopup;
 
 public class SearchComboBox<K, V> extends JComboBox<ComboItem<K, V>> {
 	
 	private final DefaultComboBoxModel<ComboItem<K,V>> originalModel;
 	
+	// TODO - Flag para permitir ou não o texto livre
 	private boolean allowFreeText = false;
 
 	public SearchComboBox() {
 		originalModel = new DefaultComboBoxModel<>();
 		super.setModel(originalModel);
 		textField().addKeyListener(new TextFieldKeyListener());
+		popup().getList().addListSelectionListener(new PopupListSelectionListener());
 	}
 
 	private class TextFieldKeyListener extends KeyAdapter {
@@ -32,7 +38,18 @@ public class SearchComboBox<K, V> extends JComboBox<ComboItem<K, V>> {
 			// Ignora teclas que não geram caracteres, para não afetar a lista de resultados.
 			if (e.isActionKey() || e.isAltDown() || e.isAltGraphDown() || e.isControlDown() || e.isMetaDown() || e.isShiftDown()) {
 				return;
-			} else if (KeyEvent.VK_DELETE == keyCode || KeyEvent.VK_ESCAPE == keyCode || KeyEvent.VK_ENTER == keyCode) {
+			} else if (KeyEvent.VK_DELETE == keyCode || KeyEvent.VK_ESCAPE == keyCode) {
+				return;
+			} else if (KeyEvent.VK_ENTER == keyCode) {
+//				// FIXME Corrigir o caso do Enter que não seleciona o item
+//				System.out.println("Enter");
+//				Object selectedItem = getSelectedItem();
+//				int selectedIndex = popup().getList().getSelectedIndex();
+//				Object selectedValue = popup().getList().getSelectedValue();
+//				System.out.println("selectedIndex = " + selectedIndex);
+//				//textField().setText(selectedItem.toString());
+//				textField().setText("TESTE");
+				//setSelectedItem(selectedValue);
 				return;
 			}
 			
@@ -41,6 +58,26 @@ public class SearchComboBox<K, V> extends JComboBox<ComboItem<K, V>> {
 			List<ComboItem<K, V>> results = search(text);
 			
 			showSearchResults(text, results);
+		}
+	}
+	
+	// https://stackoverflow.com/questions/15928314/obtain-currently-highlighted-item-from-jcombobox-popup-not-selected-item
+	private class PopupListSelectionListener implements ListSelectionListener {
+		@Override
+		public void valueChanged(ListSelectionEvent e) {
+			if (e.getValueIsAdjusting()) {
+				return;
+			}
+			
+			// FIXME - Corrigir o caso do Enter que não seleciona o item
+			
+			JList list = popup().getList();
+			
+			Object selectedValue = list.getSelectedValue();
+			if (selectedValue != null) {
+				System.out.println("list.getSelectedValue() = " + selectedValue);
+				setSelectedItem(selectedValue);
+			}
 		}
 	}
 
@@ -92,6 +129,14 @@ public class SearchComboBox<K, V> extends JComboBox<ComboItem<K, V>> {
 
 	public JTextField getTextField() {
 		return textField();
+	}
+	
+	public BasicComboPopup popup() {
+		return (BasicComboPopup) getUI().getAccessibleChild(this, 0);
+	}
+	
+	public BasicComboPopup getPopup() {
+		return popup();
 	}
 
 	public static void main(String[] args) {

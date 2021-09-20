@@ -77,6 +77,10 @@ public class ComboItem<K, V> {
 	public void setValue(V value) {
 		this.value = value;
 	}
+	
+	public boolean isBlank() {
+		return key == null && value == null;
+	}
 
 	@Override
 	public String toString() {
